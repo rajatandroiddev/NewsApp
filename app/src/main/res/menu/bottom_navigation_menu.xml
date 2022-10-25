@@ -2,20 +2,25 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/page_1"
+        android:icon="@drawable/ic_headlines"
         android:title="General" />
     <item
         android:id="@+id/page_2"
-        android:visible="true"
+        android:icon="@drawable/nav_sports"
 
-        android:title="Sports"/>
+        android:title="Sports"
+        android:visible="true" />
     <item
         android:id="@+id/page_3"
-        android:visible="true"
+        android:icon="@drawable/nav_business"
+        android:title="Buisness"
 
-        android:title="Buisness"/>
+        android:visible="true" />
     <item
         android:id="@+id/page_4"
-        android:title="World"/>
+        android:icon="@drawable/nav_science"
+
+        android:title="World" />
 
 
 </menu>

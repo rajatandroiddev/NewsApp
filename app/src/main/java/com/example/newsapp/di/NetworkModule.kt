@@ -1,5 +1,6 @@
 package com.example.newsapp.di
 
+import com.example.newsapp.data.Network
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,7 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
 import javax.inject.Singleton
 
-const val BASE_URL = "https://15.206.209.151/"
+const val BASE_URL = "https://newsapi.org/"
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -42,9 +43,9 @@ object NetworkModule {
             .build()
     }
 
-//    @Provides
-//    fun provideApiClient(retrofit: Retrofit): ApiClient {
-//        return retrofit.create(ApiClient::class.java)
-//    }
+    @Provides
+    fun provideApiClient(retrofit: Retrofit): Network {
+        return retrofit.create(Network::class.java)
+    }
 
 }
