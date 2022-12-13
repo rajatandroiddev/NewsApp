@@ -11,12 +11,15 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.newsapp.R
 import com.example.newsapp.adapter.NewsAdapter
+import com.example.newsapp.adapter.OnItemClicked
+import com.example.newsapp.data.models.Article
+import com.example.newsapp.data.models.HeadlineResponse
 import com.example.newsapp.databinding.FragmentGeneralBinding
 import com.example.newsapp.utils.Resource
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class GeneralFragment : Fragment() {
+class GeneralFragment : Fragment(), OnItemClicked {
 
     private lateinit var bindingImpl: FragmentGeneralBinding
     private lateinit var newsAdapter: NewsAdapter
@@ -28,31 +31,44 @@ class GeneralFragment : Fragment() {
     ): View {
         bindingImpl = DataBindingUtil
             .inflate(inflater, R.layout.fragment_general, container, false)
-        bindingImpl.apply {
-            recycle.layoutManager = LinearLayoutManager(context)
-            recycle.hasFixedSize()
-        }
         generalViewModel.generalNewsList()
+        getData()
 
+        return bindingImpl.root
+    }
 
-
-        generalViewModel.generalNews.observe(this, { response ->
+    private fun getData() {
+        generalViewModel.generalNews.observe(viewLifecycleOwner) { response ->
             when (response) {
                 is Resource.Success -> {
                     bindingImpl.recycle.visibility = View.VISIBLE
                     bindingImpl.shimmerLayout.stopShimmer()
                     bindingImpl.shimmerLayout.visibility = View.GONE
-                    newsAdapter = NewsAdapter(response.data?.articles)
+                    handleData(response.data?.articles)
                     bindingImpl.recycle.adapter = newsAdapter
                 }
-
                 is Resource.Loading -> bindingImpl.shimmerLayout.startShimmer()
                 is Resource.Error -> Toast.makeText(context, response.message, Toast.LENGTH_SHORT)
                     .show()
-
             }
-        })
+        }
+    }
 
-        return bindingImpl.root
+    private fun handleData(data: List<Article>?) {
+        initRecyclerView()
+        newsAdapter = NewsAdapter(data, this)
+        newsAdapter.notifyDataSetChanged()
+    }
+
+    private fun initRecyclerView() {
+        bindingImpl.apply {
+            recycle.layoutManager = LinearLayoutManager(context)
+            recycle.hasFixedSize()
+        }
+    }
+
+    override fun clickItem(article: Article) {
+        Toast.makeText(activity, article.description, Toast.LENGTH_LONG).show()
+
     }
 }
