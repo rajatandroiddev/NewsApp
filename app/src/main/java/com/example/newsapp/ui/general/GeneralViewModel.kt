@@ -1,6 +1,5 @@
 package com.example.newsapp.ui.general
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -17,18 +16,12 @@ class GeneralViewModel @Inject constructor(private val dataRepository: DataRepos
     ViewModel() {
 
     private var _generalNews = MutableLiveData<Resource<HeadlineResponse?>>()
-    val generalNews: LiveData<Resource<HeadlineResponse?>> = _generalNews
+    val generalNews: LiveData<Resource<HeadlineResponse?>> get() = _generalNews
 
 
     fun generalNewsList() {
         viewModelScope.launch {
-            _generalNews.value = Resource.Loading()
-            val getNews = dataRepository.getNews("general", "us")
-            if (getNews.isSuccessful) {
-                Log.d("TAG", "generalNewsList: ${getNews.body()}")
-                _generalNews.value = Resource.Success(getNews.body())
-
-            }
+            dataRepository.getNews("general", "us").collect { _generalNews.value = it }
         }
     }
 

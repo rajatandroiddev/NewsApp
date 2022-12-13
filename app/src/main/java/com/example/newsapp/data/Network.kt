@@ -14,5 +14,5 @@ interface Network {
     suspend fun getHeadlines(
         @Query("category") category: String?,
         @Query("country") country: String?
-    ): Response<HeadlineResponse?>
+    ): Response<HeadlineResponse>
 }
