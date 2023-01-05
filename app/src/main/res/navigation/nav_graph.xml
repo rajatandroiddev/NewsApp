@@ -16,7 +16,7 @@
         tools:layout="@layout/fragment_general" />
     <fragment
         android:id="@+id/page_2"
-        android:name="com.example.newsapp.ui.SportsFragment"
+        android:name="com.example.newsapp.ui.sports.SportsFragment"
         android:label="fragment_sports"
         tools:layout="@layout/fragment_sports" />
 </navigation>
