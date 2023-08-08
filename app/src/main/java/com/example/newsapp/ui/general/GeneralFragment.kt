@@ -7,59 +7,86 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.newsapp.R
 import com.example.newsapp.adapter.NewsAdapter
 import com.example.newsapp.adapter.OnItemClicked
 import com.example.newsapp.data.models.Article
-import com.example.newsapp.data.models.HeadlineResponse
 import com.example.newsapp.databinding.FragmentGeneralBinding
+import com.example.newsapp.utils.GeneralUiEvents
 import com.example.newsapp.utils.Resource
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class GeneralFragment : Fragment(), OnItemClicked {
 
     private lateinit var bindingImpl: FragmentGeneralBinding
     private lateinit var newsAdapter: NewsAdapter
-    private val generalViewModel: GeneralViewModel by viewModels()
+    private lateinit var generalViewModel: GeneralViewModel
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        bindingImpl = DataBindingUtil
-            .inflate(inflater, R.layout.fragment_general, container, false)
-        generalViewModel.generalNewsList()
-        getData()
-
+        bindingImpl = DataBindingUtil.inflate(inflater, R.layout.fragment_general, container, false)
+        generalViewModel = ViewModelProvider(this)[GeneralViewModel::class.java]
+        generalViewModel.generalNewsListWithFlow()
         return bindingImpl.root
     }
 
-    private fun getData() {
-        generalViewModel.generalNews.observe(viewLifecycleOwner) { response ->
-            when (response) {
-                is Resource.Success -> {
-                    bindingImpl.recycle.visibility = View.VISIBLE
-                    bindingImpl.shimmerLayout.stopShimmer()
-                    bindingImpl.shimmerLayout.visibility = View.GONE
-                    handleData(response.data?.articles)
-                    bindingImpl.recycle.adapter = newsAdapter
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initUiEvents()
+    }
+
+    /**
+     * Observing events and reacting upon based on the behavior
+     */
+    private fun initUiEvents() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                generalViewModel.events.collectLatest { response ->
+                    when (response) {
+                        is GeneralUiEvents.Loading -> bindingImpl.shimmerLayout.startShimmer()
+                        is GeneralUiEvents.Error -> Toast.makeText(
+                            context, response.errorMessage, Toast.LENGTH_SHORT
+                        ).show()
+
+                        is GeneralUiEvents.Success -> {
+                            bindingImpl.apply {
+                                recycle.visibility = View.VISIBLE
+                                shimmerLayout.visibility = View.GONE
+                                shimmerLayout.stopShimmer()
+                                handleData(response.data?.articles)
+                                recycle.adapter = newsAdapter
+                            }
+                        }
+
+                        else -> {}
+                    }
+
                 }
-                is Resource.Loading -> bindingImpl.shimmerLayout.startShimmer()
-                is Resource.Error -> Toast.makeText(context, response.message, Toast.LENGTH_SHORT)
-                    .show()
             }
         }
     }
 
+    /**
+     * Setting data inside recycler view
+     */
     private fun handleData(data: List<Article>?) {
         initRecyclerView()
         newsAdapter = NewsAdapter(data, this)
         newsAdapter.notifyDataSetChanged()
     }
 
+    /**
+     * Initializing recycler view
+     */
     private fun initRecyclerView() {
         bindingImpl.apply {
             recycle.layoutManager = LinearLayoutManager(context)
