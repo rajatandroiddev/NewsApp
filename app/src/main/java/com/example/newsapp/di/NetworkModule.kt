@@ -20,20 +20,22 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    fun provideOkHttp(): OkHttpClient {
-        return OkHttpClient.Builder()
-            .build()
-    }
-
-    @Singleton
-    @Provides
-    @Named("loggingInterceptor")
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
             this.level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
+    @Singleton
+    @Provides
+    fun provideOkHttp(interceptor: HttpLoggingInterceptor): OkHttpClient {
+        return OkHttpClient
+            .Builder()
+            .addInterceptor(interceptor)
+            .build()
+    }
+
+    @Singleton
     @Provides
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
@@ -43,9 +45,9 @@ object NetworkModule {
             .build()
     }
 
+    @Singleton
     @Provides
     fun provideApiClient(retrofit: Retrofit): Network {
         return retrofit.create(Network::class.java)
     }
-
 }

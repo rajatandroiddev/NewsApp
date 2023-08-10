@@ -1,7 +1,6 @@
 package com.example.newsapp.data.models
 
 import android.os.Parcelable
-import com.example.newsapp.data.Source
 import com.google.gson.annotations.SerializedName
 import kotlinx.android.parcel.Parcelize
 import kotlinx.android.parcel.RawValue
