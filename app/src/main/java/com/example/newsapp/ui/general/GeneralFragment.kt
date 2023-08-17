@@ -40,6 +40,8 @@ class GeneralFragment : Fragment(), OnItemClicked {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initUiEvents()
+
+
     }
 
     /**
@@ -48,32 +50,38 @@ class GeneralFragment : Fragment(), OnItemClicked {
     private fun initUiEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                generalViewModel.getNewsFromApi().collectLatest { response ->
-                    when (response) {
-                        is GeneralUiEvents.Loading -> bindingImpl.shimmerLayout.startShimmer()
-                        is GeneralUiEvents.Error -> Toast.makeText(
-                            context, response.errorMessage, Toast.LENGTH_SHORT
-                        ).show()
+                generalViewModel.networkAvailable.collect {
+                    if (it) {
+                        generalViewModel.getNewsFromApi().collectLatest { response ->
+                            when (response) {
+                                is GeneralUiEvents.Loading -> bindingImpl.shimmerLayout.startShimmer()
+                                is GeneralUiEvents.Error -> Toast.makeText(
+                                    context, response.errorMessage, Toast.LENGTH_SHORT
+                                ).show()
 
-                        is GeneralUiEvents.Success -> {
-                            bindingImpl.apply {
-                                recycle.apply {
-                                    visibility = View.VISIBLE
-                                    adapter = newsAdapter
+                                is GeneralUiEvents.Success -> {
+                                    bindingImpl.apply {
+                                        recycle.apply {
+                                            visibility = View.VISIBLE
+                                            adapter = newsAdapter
+                                        }
+                                        shimmerLayout.apply {
+                                            visibility = View.GONE
+                                            stopShimmer()
+                                        }
+                                        handleData(response.data.articles)
+                                    }
+
                                 }
-                                shimmerLayout.apply {
-                                    visibility = View.GONE
-                                    stopShimmer()
-                                }
-                                handleData(response.data.articles)
                             }
-
                         }
+                    } else {
+                        // Show No Internet UI
                     }
-
                 }
             }
         }
+        generalViewModel.checkNetwork()
     }
 
     /**
