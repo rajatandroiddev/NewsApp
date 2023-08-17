@@ -2,7 +2,6 @@ package com.example.newsapp.data
 
 import com.example.newsapp.data.models.HeadlineResponse
 import com.example.newsapp.utils.GeneralUiEvents
-import com.example.newsapp.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -22,21 +21,24 @@ class DataRepository @Inject constructor(private val network: Network) {
      * Calling api for fetching news
      */
     fun getNewsWithFlows(
-        catgry: String,
+        category: String,
         country: String
-    ): Flow<GeneralUiEvents<HeadlineResponse?>> =
+    ): Flow<GeneralUiEvents<HeadlineResponse>> =
         flow {
             emit(GeneralUiEvents.Loading)
-            val result = network.getHeadlines(catgry, country)
+            val result = network.getHeadlines(category, country)
             if (result.isSuccessful) {
-                emit(GeneralUiEvents.Success(result.body()))
+                val responseBody = result.body()
+                if (responseBody != null) {
+                    emit(GeneralUiEvents.Success(responseBody))
+                } else {
+                    emit(GeneralUiEvents.Error("Response body is null"))
+                }
             } else {
                 emit(GeneralUiEvents.Error(generateErrorMessage(result)))
             }
         }.catch {
             emit(GeneralUiEvents.Error(it.toString() ?: "An unknown error occurred..."))
-
         }.flowOn(Dispatchers.IO)
-
 
 }

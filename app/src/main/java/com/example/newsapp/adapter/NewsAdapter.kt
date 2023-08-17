@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @FragmentScoped
 class NewsAdapter @Inject constructor(
-    private val article: List<Article>?,
+    private val article: List<Article>,
     private val onItemClicked: OnItemClicked
 ) :
     RecyclerView.Adapter<NewsAdapter.NewsViewHolder>() {

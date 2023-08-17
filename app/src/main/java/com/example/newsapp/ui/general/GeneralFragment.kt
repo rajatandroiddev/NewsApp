@@ -18,7 +18,6 @@ import com.example.newsapp.adapter.OnItemClicked
 import com.example.newsapp.data.models.Article
 import com.example.newsapp.databinding.FragmentGeneralBinding
 import com.example.newsapp.utils.GeneralUiEvents
-import com.example.newsapp.utils.Resource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -35,7 +34,6 @@ class GeneralFragment : Fragment(), OnItemClicked {
     ): View {
         bindingImpl = DataBindingUtil.inflate(inflater, R.layout.fragment_general, container, false)
         generalViewModel = ViewModelProvider(this)[GeneralViewModel::class.java]
-        generalViewModel.generalNewsListWithFlow()
         return bindingImpl.root
     }
 
@@ -50,7 +48,7 @@ class GeneralFragment : Fragment(), OnItemClicked {
     private fun initUiEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                generalViewModel.events.collectLatest { response ->
+                generalViewModel.getNewsFromApi().collectLatest { response ->
                     when (response) {
                         is GeneralUiEvents.Loading -> bindingImpl.shimmerLayout.startShimmer()
                         is GeneralUiEvents.Error -> Toast.makeText(
@@ -59,15 +57,18 @@ class GeneralFragment : Fragment(), OnItemClicked {
 
                         is GeneralUiEvents.Success -> {
                             bindingImpl.apply {
-                                recycle.visibility = View.VISIBLE
-                                shimmerLayout.visibility = View.GONE
-                                shimmerLayout.stopShimmer()
-                                handleData(response.data?.articles)
-                                recycle.adapter = newsAdapter
+                                recycle.apply {
+                                    visibility = View.VISIBLE
+                                    adapter = newsAdapter
+                                }
+                                shimmerLayout.apply {
+                                    visibility = View.GONE
+                                    stopShimmer()
+                                }
+                                handleData(response.data.articles)
                             }
-                        }
 
-                        else -> {}
+                        }
                     }
 
                 }
@@ -78,7 +79,7 @@ class GeneralFragment : Fragment(), OnItemClicked {
     /**
      * Setting data inside recycler view
      */
-    private fun handleData(data: List<Article>?) {
+    private fun handleData(data: List<Article>) {
         initRecyclerView()
         newsAdapter = NewsAdapter(data, this)
         newsAdapter.notifyDataSetChanged()

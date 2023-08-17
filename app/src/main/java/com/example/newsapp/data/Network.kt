@@ -12,7 +12,7 @@ interface Network {
     @Headers("X-Api-Key:" + BuildConfig.NewsApiKey)
     @GET("/v2/top-headlines")
     suspend fun getHeadlines(
-        @Query("category") category: String?,
-        @Query("country") country: String?
+        @Query("category") category: String,
+        @Query("country") country: String
     ): Response<HeadlineResponse>
 }
