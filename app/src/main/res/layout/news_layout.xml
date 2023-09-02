@@ -7,15 +7,11 @@
             name="news"
             type="com.example.newsapp.data.models.Article" />
 
-        <variable
-            name="onClickListener"
-            type="com.example.newsapp.adapter.OnItemClicked" />
     </data>
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="@{() -> onClickListener.clickItem(news)}"
         android:layout_margin="5dp">
 
         <LinearLayout

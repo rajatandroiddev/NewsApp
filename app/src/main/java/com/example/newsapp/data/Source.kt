@@ -1,14 +1,8 @@
 package com.example.newsapp.data
 
-import android.os.Parcelable
-import com.google.gson.annotations.SerializedName
-import kotlinx.android.parcel.Parcelize
+import com.squareup.moshi.Json
 import kotlinx.android.parcel.RawValue
 
-@Parcelize
 data class Source(
-    @SerializedName("id")
-    val id: @RawValue Any,
-    @SerializedName("name")
-    val name: String
-) : Parcelable
+    @Json(name = "id") val id: Any, @Json(name = "name") val name: String
+)
