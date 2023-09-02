@@ -1,54 +1,59 @@
 package com.example.newsapp.ui.general
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.newsapp.data.DataRepository
 import com.example.newsapp.data.models.HeadlineResponse
 import com.example.newsapp.utils.GeneralUiEvents
-import com.example.newsapp.utils.Network
+import com.example.newsapp.utils.NetworkConnectivity
 import com.example.newsapp.utils.NetworkStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class GeneralViewModel @Inject constructor(
-    private val dataRepository: DataRepository,
-    private val network: Network
-) :
-    ViewModel() {
+    private val dataRepository: DataRepository, private val network: NetworkConnectivity
+) : ViewModel() {
 
-    private val sharedFlow = MutableSharedFlow<NetworkStatus>()
-    val _sharedFlow = sharedFlow.asSharedFlow()
+    private val _sharedFlow = MutableSharedFlow<NetworkStatus>(replay = 1)
+    val sharedFlow = _sharedFlow.asSharedFlow()
+
+    private val _stateFlow =
+        MutableStateFlow<GeneralUiEvents<HeadlineResponse>>(GeneralUiEvents.Loading)
+    val stateFlow = _stateFlow.asStateFlow()
 
     /**
      * Calling repository to fetch news based on category and country
      */
-    fun getNewsFromApi() {
-        if (network.isConnected()) {
-            toggleNetworkError(check = true)
-        }
+    init {
+        getNws()
+    }
 
-            dataRepository.getNewsWithFlows("general", "us").stateIn(
-                scope = viewModelScope,
-                started = WhileSubscribed(5000), initialValue = GeneralUiEvents.Loading)
-        toggleNetworkError(check = false)
+    private fun getNws() {
+        if (!network.isConnected()) {
+            toggleNetworkError(check = true)
+        } else {
+            toggleNetworkError(check = false)
+            viewModelScope.launch(context = Dispatchers.IO) {
+                dataRepository.getNewsWithFlows("general", "us").collectLatest {
+                    _stateFlow.value = it
+                }
+            }
+
+        }
 
     }
 
     private fun toggleNetworkError(check: Boolean) {
-        sharedFlow.tryEmit(
-            NetworkStatus.isAvailable(value = check)
+        _sharedFlow.tryEmit(
+            NetworkStatus.isAvailable(check)
         )
     }
-
-
-
 }

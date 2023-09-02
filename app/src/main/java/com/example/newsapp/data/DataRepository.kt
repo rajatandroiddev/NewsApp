@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onStart
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -21,24 +22,22 @@ class DataRepository @Inject constructor(private val network: Network) {
      * Calling api for fetching news
      */
     fun getNewsWithFlows(
-        category: String,
-        country: String
-    ): Flow<GeneralUiEvents<HeadlineResponse>> =
-        flow {
-            emit(GeneralUiEvents.Loading)
-            val result = network.getHeadlines(category, country)
-            if (result.isSuccessful) {
-                val responseBody = result.body()
-                if (responseBody != null) {
-                    emit(GeneralUiEvents.Success(responseBody))
-                } else {
-                    emit(GeneralUiEvents.Error("Response body is null"))
-                }
+        category: String, country: String
+    ): Flow<GeneralUiEvents<HeadlineResponse>> = flow {
+        emit(GeneralUiEvents.Loading)
+        val result = network.getHeadlines(category, country)
+        if (result.isSuccessful) {
+            val responseBody = result.body()
+            if (responseBody != null) {
+                emit(GeneralUiEvents.Success(responseBody))
             } else {
-                emit(GeneralUiEvents.Error(generateErrorMessage(result)))
+                emit(GeneralUiEvents.Error("Response body is null"))
             }
-        }.catch {
-            emit(GeneralUiEvents.Error(it.toString() ?: "An unknown error occurred..."))
+        } else {
+            emit(GeneralUiEvents.Error(generateErrorMessage(result)))
+        }
+    }.catch {
+            emit(GeneralUiEvents.Error(it.toString()))
         }.flowOn(Dispatchers.IO)
 
 }

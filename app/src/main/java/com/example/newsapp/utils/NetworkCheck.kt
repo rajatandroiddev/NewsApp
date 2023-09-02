@@ -5,7 +5,8 @@ import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import javax.inject.Inject
 
-class Network @Inject constructor(val context: Context) : NetworkConnectivity {
+class NetworkConnectivity @Inject constructor(val context: Context) :
+    NetworkCheck {
     override fun getNetworkInfo(): NetworkInfo? {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         return cm.activeNetworkInfo
@@ -17,7 +18,7 @@ class Network @Inject constructor(val context: Context) : NetworkConnectivity {
     }
 }
 
-interface NetworkConnectivity {
+interface NetworkCheck {
     fun getNetworkInfo(): NetworkInfo?
     fun isConnected(): Boolean
 }

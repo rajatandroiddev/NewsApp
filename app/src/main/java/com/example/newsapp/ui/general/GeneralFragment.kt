@@ -11,22 +11,24 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.newsapp.R
-import com.example.newsapp.adapter.NewsAdapter
-import com.example.newsapp.adapter.OnItemClicked
+import com.example.newsapp.adapter.NewsListAdapter
 import com.example.newsapp.data.models.Article
 import com.example.newsapp.databinding.FragmentGeneralBinding
 import com.example.newsapp.utils.GeneralUiEvents
+import com.example.newsapp.utils.NetworkStatus
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class GeneralFragment : Fragment(), OnItemClicked {
+class GeneralFragment : Fragment() {
 
     private lateinit var bindingImpl: FragmentGeneralBinding
-    private lateinit var newsAdapter: NewsAdapter
+    private lateinit var newsAdapter: NewsListAdapter
     private lateinit var generalViewModel: GeneralViewModel
 
     override fun onCreateView(
@@ -40,6 +42,7 @@ class GeneralFragment : Fragment(), OnItemClicked {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initUiEvents()
+        initNetworkObserver()
     }
 
     /**
@@ -48,7 +51,7 @@ class GeneralFragment : Fragment(), OnItemClicked {
     private fun initUiEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                generalViewModel.getNewsFromApi().collectLatest { response ->
+                generalViewModel.stateFlow.collectLatest { response ->
                     when (response) {
                         is GeneralUiEvents.Loading -> bindingImpl.shimmerLayout.startShimmer()
                         is GeneralUiEvents.Error -> Toast.makeText(
@@ -57,22 +60,42 @@ class GeneralFragment : Fragment(), OnItemClicked {
 
                         is GeneralUiEvents.Success -> {
                             bindingImpl.apply {
-                                recycle.apply {
-                                    visibility = View.VISIBLE
-                                    adapter = newsAdapter
-                                }
                                 shimmerLayout.apply {
                                     visibility = View.GONE
                                     stopShimmer()
                                 }
                                 handleData(response.data.articles)
+                                recycle.apply {
+                                    visibility = View.VISIBLE
+                                    adapter = newsAdapter
+                                }
                             }
 
                         }
                     }
-
                 }
             }
+        }
+    }
+
+    private fun initNetworkObserver() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                generalViewModel.sharedFlow.collectLatest { response ->
+                    when (response) {
+                        is NetworkStatus.isAvailable -> showSnackBar(response.value)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showSnackBar(value: Boolean) {
+        val snackBar = Snackbar.make(requireView().rootView, "No internet", Snackbar.LENGTH_SHORT)
+        if (value) {
+            snackBar.show()
+        } else {
+            snackBar.dismiss()
         }
     }
 
@@ -81,8 +104,11 @@ class GeneralFragment : Fragment(), OnItemClicked {
      */
     private fun handleData(data: List<Article>) {
         initRecyclerView()
-        newsAdapter = NewsAdapter(data, this)
-        newsAdapter.notifyDataSetChanged()
+        newsAdapter = NewsListAdapter(data) {
+            findNavController().navigate(R.id.action_general_fragment_to_sports_fragment)
+        }
+
+        newsAdapter.submitList(data)
     }
 
     /**
@@ -93,10 +119,5 @@ class GeneralFragment : Fragment(), OnItemClicked {
             recycle.layoutManager = LinearLayoutManager(context)
             recycle.hasFixedSize()
         }
-    }
-
-    override fun clickItem(article: Article) {
-        Toast.makeText(activity, article.description, Toast.LENGTH_LONG).show()
-
     }
 }

@@ -13,7 +13,11 @@
         android:id="@+id/page_1"
         android:name="com.example.newsapp.ui.general.GeneralFragment"
         android:label="fragment_general"
-        tools:layout="@layout/fragment_general" />
+        tools:layout="@layout/fragment_general">
+        <action
+            android:id="@+id/action_general_fragment_to_sports_fragment"
+            app:destination="@id/page_2" />
+    </fragment>
     <fragment
         android:id="@+id/page_2"
         android:name="com.example.newsapp.ui.SportsFragment"
